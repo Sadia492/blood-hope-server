@@ -26,6 +26,7 @@ async function run() {
       .db("bloodHopeDb")
       .collection("districts");
     const upazilasCollection = client.db("bloodHopeDb").collection("upazilas");
+    const usersCollection = client.db("bloodHopeDb").collection("users");
     // Connect the client to the server
     await client.connect();
 
@@ -35,6 +36,12 @@ async function run() {
     });
     app.get("/upazilas", async (req, res) => {
       const result = await upazilasCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
       res.send(result);
     });
     // Ping the deployment to confirm the connection
