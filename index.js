@@ -5,6 +5,8 @@ require("dotenv").config();
 const port = process.env.PORT || 9000;
 const app = express();
 
+const jwt = require("jsonwebtoken");
+
 app.use(cors());
 app.use(express.json());
 
@@ -19,6 +21,21 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+// middlewares
+const verifyToken = (req, res, next) => {
+  console.log("inside verify token", req.headers.authorization);
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = req.headers.authorization.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 
 async function run() {
   try {
@@ -29,6 +46,14 @@ async function run() {
     const usersCollection = client.db("bloodHopeDb").collection("users");
     // Connect the client to the server
     await client.connect();
+
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.JWT_Secret_Key, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
 
     app.get("/districts", async (req, res) => {
       const result = await districtsCollection.find().toArray();
