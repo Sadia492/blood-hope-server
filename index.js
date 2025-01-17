@@ -44,6 +44,9 @@ async function run() {
       .collection("districts");
     const upazilasCollection = client.db("bloodHopeDb").collection("upazilas");
     const usersCollection = client.db("bloodHopeDb").collection("users");
+    const donationRequestsCollection = client
+      .db("bloodHopeDb")
+      .collection("donationRequest");
     // Connect the client to the server
     await client.connect();
 
@@ -82,6 +85,7 @@ async function run() {
       const result = await usersCollection.findOne(query);
       res.send(result);
     });
+    // user update
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email };
@@ -90,6 +94,14 @@ async function run() {
         $set: { ...userData },
       };
       const result = await usersCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+    // donation request related
+
+    // donation post
+    app.post("/donation-requests", async (req, res) => {
+      const donation = req.body;
+      const result = await donationRequestsCollection.insertOne(donation);
       res.send(result);
     });
 
