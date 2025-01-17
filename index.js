@@ -104,6 +104,18 @@ async function run() {
       const result = await donationRequestsCollection.insertOne(donation);
       res.send(result);
     });
+    // getting all donation requests
+    app.get("/donation-requests", async (req, res) => {
+      const result = await donationRequestsCollection.find().toArray();
+      res.send(result);
+    });
+    // getting user donation requests
+    app.get("/donation-requests/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { requesterEmail: email };
+      const result = await donationRequestsCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // Ping the deployment to confirm the connection
     await client.db("admin").command({ ping: 1 });
