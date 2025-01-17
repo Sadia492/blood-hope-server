@@ -63,23 +63,36 @@ async function run() {
       const result = await upazilasCollection.find().toArray();
       res.send(result);
     });
-
+    // to post a user
     app.post("/users", async (req, res) => {
       const user = req.body;
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+    // to get all users
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
-    app.get("/user/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
+    // to get one user
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
 
       const result = await usersCollection.findOne(query);
       res.send(result);
     });
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const userData = req.body;
+      const updatedDoc = {
+        $set: { ...userData },
+      };
+      const result = await usersCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
     // Ping the deployment to confirm the connection
     await client.db("admin").command({ ping: 1 });
     console.log(
