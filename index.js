@@ -149,12 +149,26 @@ async function run() {
       const email = req.params.email;
       const query = { requesterEmail: email };
       const result = await donationRequestsCollection
-        .find()
+        .find(query)
         .sort({ _id: -1 }) // Sort by _id in descending order (latest first)
         .limit(3) // Limit to the last 3 documents
         .toArray();
 
       res.send(result); // Send the last 3 donation requests
+    });
+
+    // get user role
+    app.get("/users/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      res.send({ role: result?.role });
+    });
+    app.get("/admin-stat", async (req, res) => {
+      const totalUsers = await usersCollection.estimatedDocumentCount();
+      const totalRequests =
+        await donationRequestsCollection.estimatedDocumentCount();
+      res.send({ totalUsers, totalRequests });
     });
 
     // Ping the deployment to confirm the connection
