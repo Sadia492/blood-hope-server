@@ -116,7 +116,12 @@ async function run() {
     //   const result = await donationRequestsCollection.find(query).toArray();
     //   res.send(result);
     // });
-
+    app.get("/total-donation-requests/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { requesterEmail: email };
+      const total = await donationRequestsCollection.countDocuments(query);
+      res.send({ count: parseInt(total) });
+    });
     app.get("/donation-requests/:email", async (req, res) => {
       const email = req.params.email;
 
@@ -129,28 +134,27 @@ async function run() {
         query.donationStatus = status;
       }
 
-      try {
-        // Get the total count of documents matching the query
-        const total = await donationRequestsCollection.countDocuments(query);
+      // Fetch the paginated results
+      const result = await donationRequestsCollection
+        .find(query)
+        .skip((page - 1) * limit) // Skip documents for pagination
+        .limit(parseInt(limit)) // Limit the number of documents returned
+        .toArray();
 
-        // Fetch the paginated results
-        const result = await donationRequestsCollection
-          .find(query)
-          .skip((page - 1) * limit) // Skip documents for pagination
-          .limit(parseInt(limit)) // Limit the number of documents returned
-          .toArray();
+      // Send response with paginated data
+      res.send(result);
+    });
 
-        // Send response with paginated data
-        res.send({
-          total, // Total matching records
-          page: parseInt(page), // Current page
-          limit: parseInt(limit), // Items per page
-          totalPages: Math.ceil(total / limit), // Total pages
-          data: result, // Paginated data
-        });
-      } catch (error) {
-        res.status(500).send({ error: "Failed to fetch donation requests." });
-      }
+    app.get("/last-donation-requests/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { requesterEmail: email };
+      const result = await donationRequestsCollection
+        .find()
+        .sort({ _id: -1 }) // Sort by _id in descending order (latest first)
+        .limit(3) // Limit to the last 3 documents
+        .toArray();
+
+      res.send(result); // Send the last 3 donation requests
     });
 
     // Ping the deployment to confirm the connection
