@@ -110,11 +110,47 @@ async function run() {
       res.send(result);
     });
     // getting user donation requests
+    // app.get("/donation-requests/:email", async (req, res) => {
+    //   const email = req.params.email;
+    //   const query = { requesterEmail: email };
+    //   const result = await donationRequestsCollection.find(query).toArray();
+    //   res.send(result);
+    // });
+
     app.get("/donation-requests/:email", async (req, res) => {
       const email = req.params.email;
+
+      // Extract query parameters for filtering and pagination
+      const { status, page = 1, limit = 10 } = req.query;
+
+      // Build the query object
       const query = { requesterEmail: email };
-      const result = await donationRequestsCollection.find(query).toArray();
-      res.send(result);
+      if (status) {
+        query.donationStatus = status;
+      }
+
+      try {
+        // Get the total count of documents matching the query
+        const total = await donationRequestsCollection.countDocuments(query);
+
+        // Fetch the paginated results
+        const result = await donationRequestsCollection
+          .find(query)
+          .skip((page - 1) * limit) // Skip documents for pagination
+          .limit(parseInt(limit)) // Limit the number of documents returned
+          .toArray();
+
+        // Send response with paginated data
+        res.send({
+          total, // Total matching records
+          page: parseInt(page), // Current page
+          limit: parseInt(limit), // Items per page
+          totalPages: Math.ceil(total / limit), // Total pages
+          data: result, // Paginated data
+        });
+      } catch (error) {
+        res.status(500).send({ error: "Failed to fetch donation requests." });
+      }
     });
 
     // Ping the deployment to confirm the connection
