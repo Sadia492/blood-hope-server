@@ -96,6 +96,19 @@ async function run() {
       const result = await usersCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
+    // update user status
+    app.patch("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const userStatus = req.body?.status;
+
+      const updatedDoc = {
+        $set: { status: userStatus },
+      };
+      const result = await usersCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
     // donation request related
 
     // donation post
@@ -110,12 +123,7 @@ async function run() {
       res.send(result);
     });
     // getting user donation requests
-    // app.get("/donation-requests/:email", async (req, res) => {
-    //   const email = req.params.email;
-    //   const query = { requesterEmail: email };
-    //   const result = await donationRequestsCollection.find(query).toArray();
-    //   res.send(result);
-    // });
+
     app.get("/total-donation-requests/:email", async (req, res) => {
       const email = req.params.email;
       const query = { requesterEmail: email };
@@ -164,6 +172,8 @@ async function run() {
       const result = await usersCollection.findOne(query);
       res.send({ role: result?.role });
     });
+
+    // admin stat
     app.get("/admin-stat", async (req, res) => {
       const totalUsers = await usersCollection.estimatedDocumentCount();
       const totalRequests =
