@@ -144,15 +144,34 @@ async function run() {
     });
     // getting all donation requests
     app.get("/donation-requests", async (req, res) => {
-      const result = await donationRequestsCollection.find().toArray();
+      // Extract query parameters for filtering and pagination
+      const { status, page = 1, limit = 10 } = req.query;
+      const query = {};
+      if (status) {
+        query.donationStatus = status;
+      }
+
+      // Fetch the paginated results
+      const result = await donationRequestsCollection
+        .find(query)
+        .skip((page - 1) * limit) // Skip documents for pagination
+        .limit(parseInt(limit)) // Limit the number of documents returned
+        .toArray();
+
       res.send(result);
     });
     // getting user donation requests
 
+    app.get("/total-donation-requests", async (req, res) => {
+      const total = await donationRequestsCollection.estimatedDocumentCount();
+      res.send({ count: parseInt(total) });
+    });
     app.get("/total-donation-requests/:email", async (req, res) => {
       const email = req.params.email;
       const query = { requesterEmail: email };
-      const total = await donationRequestsCollection.countDocuments(query);
+      const total = await donationRequestsCollection.estimatedDocumentCount(
+        query
+      );
       res.send({ count: parseInt(total) });
     });
     app.get("/donation-requests/:email", async (req, res) => {
