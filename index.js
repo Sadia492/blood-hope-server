@@ -1,10 +1,10 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
 
 const port = process.env.PORT || 9000;
 const app = express();
-
+const stripe = require("stripe")(process.env.Payment_Secret_Key);
 const jwt = require("jsonwebtoken");
 
 app.use(cors());
@@ -48,6 +48,7 @@ async function run() {
       .db("bloodHopeDb")
       .collection("donationRequest");
     const blogsCollection = client.db("bloodHopeDb").collection("blogs");
+    const fundingCollection = client.db("bloodHopeDb").collection("funding");
     // Connect the client to the server
     await client.connect();
 
@@ -231,8 +232,9 @@ async function run() {
       res.send(result);
     });
     // get only pending donation data
-    app.get("/donation-request/status/pending", async (req, res) => {
-      const query = { donationStatus: "pending" };
+    app.get("/donation-request/status/:status", async (req, res) => {
+      const status = req.params.status;
+      const query = { donationStatus: status };
       const result = await donationRequestsCollection.find(query).toArray();
       res.send(result);
     });
@@ -327,9 +329,49 @@ async function run() {
       res.send(result);
     });
     // published blog getting route
-    app.get("/blogs/status/published", async (req, res) => {
-      const query = { blogStatus: "published" };
+    app.get("/blogs/status/:status", async (req, res) => {
+      const status = req.params.status;
+      const query = { blogStatus: status };
       const result = await blogsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // create payment intent
+    app.post("/create-payment-intent", async (req, res) => {
+      const { amount, currency } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).send({ error: "Invalid amount" });
+      }
+
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount,
+          currency,
+          payment_method_types: ["card"],
+        });
+        res.send({ clientSecret: paymentIntent.client_secret });
+      } catch (error) {
+        res.status(500).send({ error: error.message });
+      }
+    });
+    // funding post
+    app.post("/funding", async (req, res) => {
+      const fundData = req.body;
+
+      try {
+        // Save data to the database (using a hypothetical `fundings` collection)
+        const result = await fundingCollection.insertOne(fundData);
+
+        res.send(result);
+      } catch (err) {
+        console.error("Error saving funding data:", err);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    });
+    // get all funds
+    app.get("/funding", async (req, res) => {
+      const result = await fundingCollection.find().toArray();
       res.send(result);
     });
 
