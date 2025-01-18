@@ -253,7 +253,45 @@ async function run() {
     });
     // get all blog
     app.get("/blogs", async (req, res) => {
-      const result = await blogsCollection.find().toArray();
+      const { status } = req.query;
+      const query = {};
+      if (status) {
+        query.blogStatus = status;
+      }
+      const result = await blogsCollection.find(query).toArray();
+      res.send(result);
+    });
+    // get single blog
+    app.get("/blog/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.findOne(query);
+      res.send(result);
+    });
+
+    // update blogs status
+
+    app.patch("/blog/:id", async (req, res) => {
+      const id = req.params.id;
+      const { blogStatus } = req.body; // Ensure you use blogStatus here
+
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: { blogStatus: blogStatus }, // Set the received blogStatus
+      };
+      try {
+        const result = await blogsCollection.updateOne(query, updatedDoc);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: "Failed to update blog status" });
+      }
+    });
+
+    // blog delete
+    app.delete("/blog/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.deleteOne(query);
       res.send(result);
     });
 
