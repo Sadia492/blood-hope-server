@@ -66,6 +66,43 @@ async function run() {
       const result = await upazilasCollection.find().toArray();
       res.send(result);
     });
+
+    // update a user role & status
+
+    app.patch("/user/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const { role, status } = req.body;
+
+      if (!role && !status) {
+        return res
+          .status(400)
+          .send({ error: "No role or status provided for update." });
+      }
+
+      const query = { email };
+      const updateDoc = {};
+
+      if (role) updateDoc.role = role;
+      if (status) updateDoc.status = status;
+
+      try {
+        const result = await usersCollection.updateOne(query, {
+          $set: updateDoc,
+        });
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: "Failed to update user" });
+      }
+    });
+
+    // get user role
+    app.get("/users/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      res.send({ role: result?.role });
+    });
+
     // to post a user
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -92,18 +129,6 @@ async function run() {
       const userData = req.body;
       const updatedDoc = {
         $set: { ...userData },
-      };
-      const result = await usersCollection.updateOne(query, updatedDoc);
-      res.send(result);
-    });
-    // update user status
-    app.patch("/user/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const userStatus = req.body?.status;
-
-      const updatedDoc = {
-        $set: { status: userStatus },
       };
       const result = await usersCollection.updateOne(query, updatedDoc);
       res.send(result);
@@ -163,14 +188,6 @@ async function run() {
         .toArray();
 
       res.send(result); // Send the last 3 donation requests
-    });
-
-    // get user role
-    app.get("/users/role/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { email };
-      const result = await usersCollection.findOne(query);
-      res.send({ role: result?.role });
     });
 
     // admin stat
