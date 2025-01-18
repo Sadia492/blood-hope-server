@@ -196,6 +196,32 @@ async function run() {
       // Send response with paginated data
       res.send(result);
     });
+    //   get single donation request
+    app.get("/donation-request/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await donationRequestsCollection.findOne(query);
+      res.send(result);
+    });
+
+    // update donation status
+    app.patch("/donation-request/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const { status } = req.body;
+      const updatedDoc = {
+        $set: { donationStatus: status },
+      };
+      try {
+        const result = await donationRequestsCollection.updateOne(
+          query,
+          updatedDoc
+        );
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: "Failed to update donation status." });
+      }
+    });
 
     app.get("/last-donation-requests/:email", async (req, res) => {
       const email = req.params.email;
