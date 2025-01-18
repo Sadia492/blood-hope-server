@@ -47,6 +47,7 @@ async function run() {
     const donationRequestsCollection = client
       .db("bloodHopeDb")
       .collection("donationRequest");
+    const blogsCollection = client.db("bloodHopeDb").collection("blogs");
     // Connect the client to the server
     await client.connect();
 
@@ -241,6 +242,19 @@ async function run() {
       const totalRequests =
         await donationRequestsCollection.estimatedDocumentCount();
       res.send({ totalUsers, totalRequests });
+    });
+
+    // blogs related
+    // post blog
+    app.post("/blogs", async (req, res) => {
+      const blog = req.body;
+      const result = await blogsCollection.insertOne(blog);
+      res.send(result);
+    });
+    // get all blog
+    app.get("/blogs", async (req, res) => {
+      const result = await blogsCollection.find().toArray();
+      res.send(result);
     });
 
     // Ping the deployment to confirm the connection
