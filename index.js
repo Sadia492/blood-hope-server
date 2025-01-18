@@ -230,6 +230,12 @@ async function run() {
       const result = await donationRequestsCollection.findOne(query);
       res.send(result);
     });
+    // get only pending donation data
+    app.get("/donation-request/status/pending", async (req, res) => {
+      const query = { donationStatus: "pending" };
+      const result = await donationRequestsCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // update donation status
     app.patch("/donation-request/:id", async (req, res) => {
@@ -318,6 +324,12 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await blogsCollection.deleteOne(query);
+      res.send(result);
+    });
+    // published blog getting route
+    app.get("/blogs/status/published", async (req, res) => {
+      const query = { blogStatus: "published" };
+      const result = await blogsCollection.find(query).toArray();
       res.send(result);
     });
 
