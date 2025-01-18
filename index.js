@@ -115,6 +115,7 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+
     // to get one user
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -133,6 +134,31 @@ async function run() {
       };
       const result = await usersCollection.updateOne(query, updatedDoc);
       res.send(result);
+    });
+
+    // only donor data getting
+    app.get("/users/donor", async (req, res) => {
+      const { bloodGroup, district, upazila } = req.query;
+
+      // Construct the query filter based on the parameters
+      const query = { role: "donor" };
+
+      if (bloodGroup) {
+        query.bloodGroup = bloodGroup;
+      }
+      if (district) {
+        query.district = district;
+      }
+      if (upazila) {
+        query.upazila = upazila;
+      }
+
+      try {
+        const result = await usersCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: "Failed to fetch donors." });
+      }
     });
 
     // donation request related
