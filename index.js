@@ -64,17 +64,6 @@ async function run() {
       }
       next();
     };
-    // use verify admin after verifyToken
-    const verifyVolunteer = async (req, res, next) => {
-      const email = req.decoded.email;
-      const query = { email: email };
-      const user = await usersCollection.findOne(query);
-      const isVolunteer = user?.role === "volunteer";
-      if (!isVolunteer) {
-        return res.status(403).send({ message: "forbidden access" });
-      }
-      next();
-    };
 
     const verifyAdminOrVolunteer = async (req, res, next) => {
       const email = req.decoded.email;
@@ -140,7 +129,10 @@ async function run() {
     );
 
     // get user role
-    app.get("/users/role/:email", async (req, res) => {
+    app.get("/users/role/:email", verifyToken, async (req, res) => {
+      if (req.params.email !== req.decoded.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
       const email = req.params.email;
       const query = { email };
       const result = await usersCollection.findOne(query);
@@ -190,7 +182,7 @@ async function run() {
     });
 
     // to get one user
-    app.get("/user/:email", verifyToken, async (req, res) => {
+    app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email };
 
@@ -199,6 +191,9 @@ async function run() {
     });
     // user update
     app.put("/user/:email", verifyToken, async (req, res) => {
+      if (req.params.email !== req.decoded.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
       const email = req.params.email;
       const query = { email };
       const userData = req.body;
@@ -303,6 +298,9 @@ async function run() {
       "/total-donation-requests/:email",
       verifyToken,
       async (req, res) => {
+        if (req.params.email !== req.decoded.email) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
         const email = req.params.email;
         const { status } = req.query;
 
@@ -317,6 +315,9 @@ async function run() {
     );
 
     app.get("/donation-requests/:email", verifyToken, async (req, res) => {
+      if (req.params.email !== req.decoded.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
       const email = req.params.email;
       const { status, page = 1, limit = 2 } = req.query;
 
@@ -370,6 +371,9 @@ async function run() {
     });
 
     app.get("/last-donation-requests/:email", verifyToken, async (req, res) => {
+      if (req.params.email !== req.decoded.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
       const email = req.params.email;
       const query = { requesterEmail: email };
       const result = await donationRequestsCollection
@@ -410,7 +414,7 @@ async function run() {
       }
     );
     // get all blog
-    app.get("/blogs", verifyToken, async (req, res) => {
+    app.get("/blogs", verifyToken, verifyAdminOrVolunteer, async (req, res) => {
       const { status } = req.query;
       const query = {};
       if (status) {
@@ -420,7 +424,7 @@ async function run() {
       res.send(result);
     });
     // get single blog
-    app.get("/blog/:id", verifyToken, async (req, res) => {
+    app.get("/blog/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await blogsCollection.findOne(query);
@@ -453,17 +457,12 @@ async function run() {
       res.send(result);
     });
     // published blog getting route
-    app.get(
-      "/blogs/status/:status",
-      verifyToken,
-      verifyAdmin,
-      async (req, res) => {
-        const status = req.params.status;
-        const query = { blogStatus: status };
-        const result = await blogsCollection.find(query).toArray();
-        res.send(result);
-      }
-    );
+    app.get("/blogs/status/:status", async (req, res) => {
+      const status = req.params.status;
+      const query = { blogStatus: status };
+      const result = await blogsCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // create payment intent
     app.post("/create-payment-intent", async (req, res) => {
