@@ -51,7 +51,7 @@ async function run() {
     const blogsCollection = client.db("bloodHopeDb").collection("blogs");
     const fundingCollection = client.db("bloodHopeDb").collection("funding");
     // Connect the client to the server
-    await client.connect();
+    // await client.connect();
 
     // use verify admin after verifyToken
     const verifyAdmin = async (req, res, next) => {
@@ -504,7 +504,7 @@ async function run() {
     });
 
     // Ping the deployment to confirm the connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
