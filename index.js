@@ -23,13 +23,11 @@ const client = new MongoClient(uri, {
 });
 // middlewares
 const verifyToken = (req, res, next) => {
-  console.log("inside verify token", req.headers.authorization);
   if (!req.headers.authorization) {
     return res.status(401).send({ message: "unauthorized access" });
   }
   const token = req.headers.authorization.split(" ")[1];
   jwt.verify(token, process.env.JWT_Secret_Key, (err, decoded) => {
-    console.log(err);
     if (err) {
       return res.status(401).send({ message: "unauthorized access" });
     }
@@ -50,6 +48,7 @@ async function run() {
       .collection("donationRequest");
     const blogsCollection = client.db("bloodHopeDb").collection("blogs");
     const fundingCollection = client.db("bloodHopeDb").collection("funding");
+    const reviewCollection = client.db("bloodHopeDb").collection("reviews");
     // Connect the client to the server
     // await client.connect();
 
@@ -260,6 +259,10 @@ async function run() {
         res.send(result);
       }
     );
+    app.get("/all-donation-request", async (req, res) => {
+      const result = await donationRequestsCollection.find().toArray();
+      res.send(result);
+    });
 
     // delete a donation request
     app.delete("/donation-request/:id", verifyToken, async (req, res) => {
@@ -315,9 +318,9 @@ async function run() {
     );
 
     app.get("/donation-requests/:email", verifyToken, async (req, res) => {
-      if (req.params.email !== req.decoded.email) {
-        return res.status(403).send({ message: "forbidden access" });
-      }
+      // if (req.params.email !== req.decoded.email) {
+      //   return res.status(403).send({ message: "forbidden access" });
+      // }
       const email = req.params.email;
       const { status, page = 1, limit = 2 } = req.query;
 
@@ -337,7 +340,7 @@ async function run() {
     });
 
     //   get single donation request
-    app.get("/donation-request/:id", verifyToken, async (req, res) => {
+    app.get("/donation-request/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await donationRequestsCollection.findOne(query);
@@ -386,20 +389,15 @@ async function run() {
     });
 
     // admin stat
-    app.get(
-      "/admin-stat/:role",
-      verifyToken,
-      verifyAdminOrVolunteer,
-      async (req, res) => {
-        const role = req.params.role;
-        const query = { role: role };
+    app.get("/admin-stat/:role", verifyToken, async (req, res) => {
+      const role = req.params.role;
+      const query = { role: role };
 
-        const totalUsers = await usersCollection.countDocuments(query);
-        const totalRequests =
-          await donationRequestsCollection.estimatedDocumentCount();
-        res.send({ totalUsers, totalRequests });
-      }
-    );
+      const totalUsers = await usersCollection.countDocuments(query);
+      const totalRequests =
+        await donationRequestsCollection.estimatedDocumentCount();
+      res.send({ totalUsers, totalRequests });
+    });
 
     // blogs related
     // post blog
@@ -464,6 +462,12 @@ async function run() {
       res.send(result);
     });
 
+    // review get
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
+      res.send(result);
+    });
+
     // create payment intent
     app.post("/create-payment-intent", async (req, res) => {
       const { amount, currency } = req.body;
@@ -493,7 +497,6 @@ async function run() {
 
         res.send(result);
       } catch (err) {
-        console.error("Error saving funding data:", err);
         res.status(500).send({ message: "Internal server error" });
       }
     });
